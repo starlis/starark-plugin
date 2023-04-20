@@ -8,6 +8,9 @@ namespace SAOmega {
         size_t *actualPtr = reinterpret_cast<size_t *>(GetNativePointerField<void*>(_this, field));
         return actualPtr - reinterpret_cast<size_t *>(_this);
     }
+    inline uint64_t timestamp() {
+        return std::time(nullptr);
+    }
 
 	BOOL Load();
 	BOOL Unload();
@@ -28,6 +31,10 @@ namespace SAOmega {
         void Unload();
     }
     namespace WorldSave {
+        void Load();
+        void Unload();
+    }
+    namespace Commands {
         void Load();
         void Unload();
     }

@@ -61,7 +61,11 @@ namespace SAOmega::Loot {
                 return false;
             }
             auto name = item.uClass->NameField().ToString();
-            return shouldFilter(name);
+            bool b = shouldFilter(name);
+            if (b) {
+                //LOG->info(name.ToString() + " removed");
+            }
+            return b;
         }
     };
 
@@ -87,12 +91,13 @@ namespace SAOmega::Loot {
 
             APrimalDinoCharacter* dinoCDO = (APrimalDinoCharacter*)obj;
 
+            static auto dinoDropClass = bpPath.Get();
             for (UObject* listItem : dinoCDO->DeathInventoryTemplatesField().AssociatedObjects) {
                 // DeathInventoryTemplates.AssociatedObjects is an array of UBlueprint*
                 UBlueprint *bp = (UBlueprint *) listItem;
 
                 // The BP class is a sublcass of UPrimalInventoryComponent
-                if (!bp->GeneratedClassField().uClass->IsChildOf(UPrimalInventoryComponent::StaticClass())) {
+                if (!bp->GeneratedClassField().uClass->IsChildOf(dinoDropClass)) {
                     continue;
                 }
 

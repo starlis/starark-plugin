@@ -34,7 +34,7 @@ set(ALL_FILES
         ${Source_Files}
         ${Source_Files__Helpers}
         ${Source_Files__Plugin}
-        )
+        Plugin/commands.cpp)
 
 ################################################################################
 # Target

@@ -22,8 +22,8 @@ namespace SAOmega::Breeding {
         auto totalNextMutations = maleCount + femaleCount;
         auto femaleRolls = femaleDino->RandomMutationRollsField();
         auto maleRolls = maleDino->RandomMutationRollsField();
-        LOG->info("female: " + getDinoName(femaleDino) + " " + STR(femaleCount) + " rolls " + STR(femaleRolls));
-        LOG->info("male: " + getDinoName(maleDino) + " " + STR(maleCount) + " rolls " + STR(maleRolls));
+        //LOG->info("female: " + getDinoName(femaleDino) + " " + STR(femaleCount) + " rolls " + STR(femaleRolls));
+        //LOG->info("male: " + getDinoName(maleDino) + " " + STR(maleCount) + " rolls " + STR(maleRolls));
         if (femaleRolls == 3 && maleRolls == 3) { // Isn't even trying for mutations, QOL to never get
             femaleDino->RandomMutationRollsField() = 0;
             maleDino->RandomMutationRollsField() = 0;
@@ -32,7 +32,7 @@ namespace SAOmega::Breeding {
             femaleDino->RandomMutationRollsField() = 0;
             maleDino->RandomMutationRollsField() = 0;
         } else {
-            LOG->info("Mating Mutations " + STR(totalNextMutations) + " less than max " + STR(max) + " for " + getDinoName(femaleDino));
+            //LOG->info("Mating Mutations " + STR(totalNextMutations) + " less than max " + STR(max) + " for " + getDinoName(femaleDino));
         }
         APrimalDinoCharacter_DoMate_original(femaleDino, maleDino);
         // Restore back

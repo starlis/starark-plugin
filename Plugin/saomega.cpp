@@ -9,6 +9,7 @@
 #include <shellapi.h>
 
 namespace SAOmega {
+    DECLARE_HOOK(AShooterGameMode_AreTribesAllied, bool, AShooterGameMode*, int, int);
     nlohmann::json config;
 
     std::string getDinoName(APrimalDinoCharacter* dino) {
@@ -88,6 +89,15 @@ namespace SAOmega {
 
         }
     }
+    const int adminTribeId = 1830631037;
+    bool Hook_AShooterGameMode_AreTribesAllied(AShooterGameMode* _this, int tribe1, int tribe2) {
+        if (tribe1 >= 50000 && tribe2 >= 50000 && tribe1 != tribe2 && (tribe1 == adminTribeId || tribe2 == adminTribeId)) {
+            return true;
+        } else {
+            return AShooterGameMode_AreTribesAllied_original(_this, tribe1, tribe2);
+        }
+    }
+
 	BOOL Load()
 	{
 		Log::Get().Init("SAOmega");
@@ -119,14 +129,14 @@ namespace SAOmega {
         } catch (std::exception& e) {
             LOG->error("SAOmega Exception: " + std::string(e.what()));
         }*/
-        //SET_HOOK(UWorld, SaveToFile);
+
         SAOmega::Breeding::Load();
         SAOmega::Spyglass::Load();
         SAOmega::Loot::Load();
         SAOmega::Experience::Load();
-        //SAOmega::WorldSave::Load();
-
-		//SET_HOOK(UPrimalInventoryComponent, InitializeInventory);
+        SAOmega::Commands::Load();
+        SAOmega::WorldSave::Load();
+        SET_HOOK(AShooterGameMode, AreTribesAllied);
 
         //COMMANDS.AddChatCommand("dumpsouls", &onDumpSouls);
         //COMMANDS.AddChatCommand("/dumptarget", &onDumpTarget);
@@ -137,11 +147,14 @@ namespace SAOmega {
 	BOOL Unload()
 	{
         LOG->info("SAOmega Unloading");
+
         SAOmega::Breeding::Unload();
         SAOmega::Spyglass::Unload();
         SAOmega::Loot::Unload();
         SAOmega::Experience::Unload();
-        //SAOmega::WorldSave::Unload();
+        SAOmega::Commands::Unload();
+        SAOmega::WorldSave::Unload();
+        DISABLE_HOOK(AShooterGameMode, AreTribesAllied);
 
 
         //COMMANDS.RemoveChatCommand("dumpsouls");
