@@ -10,11 +10,12 @@
 #include <API/ARK/Ark.h>
 #include <Logger/Logger.h>
 #include <Tools.h>
+#include <thread>
 #include <macros.h>
 #include <BlueprintCache.h>
+#include <TaskExecutor.h>
 #include <fstream>
 #include "json.hpp"
 #include <unordered_set>
 #include <Timer.h>
-
-#pragma comment(lib, "ArkApi.lib")
+#include <mysql++11.h>

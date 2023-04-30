@@ -4,7 +4,7 @@
 //
 // Created by Aikar on 4/1/2023.
 //
-namespace SAOmega::Experience {
+namespace SA::Experience {
     DECLARE_HOOK(UPrimalCharacterStatusComponent_AddExperience, void, UPrimalCharacterStatusComponent*, float, bool, EXPType::Type);
 
     float addExpAmount = 0.0f;

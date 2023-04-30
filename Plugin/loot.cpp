@@ -5,7 +5,7 @@
 #include "saomega.h"
 
 
-namespace SAOmega::Loot {
+namespace SA::Loot {
     BlueprintCache bpPath("Blueprint'/Game/PrimalEarth/CoreBlueprints/Inventories/DinoDropInventoryComponent_BP_Base.DinoDropInventoryComponent_BP_Base'");
     struct FSupplyCrateItemEntry {
         uint8 _padding[0x18];
@@ -104,8 +104,8 @@ namespace SAOmega::Loot {
                 // Get the CDO for this inventory component and remove meat from its item sets
                 UPrimalInventoryComponent *component = (UPrimalInventoryComponent *) bp->GeneratedClassField().uClass->ClassDefaultObjectField();
 
-                auto& itemSets = FORCECAST(TArray<SAOmega::Loot::FSupplyCrateItemSet>, component->ItemSetsField());
-                auto& additionalSets = FORCECAST(TArray<SAOmega::Loot::FSupplyCrateItemSet>,
+                auto& itemSets = FORCECAST(TArray<SA::Loot::FSupplyCrateItemSet>, component->ItemSetsField());
+                auto& additionalSets = FORCECAST(TArray<SA::Loot::FSupplyCrateItemSet>,
                                                 component->AdditionalItemSetsField());
                 int count = 0;
                 for (auto &set: itemSets) {

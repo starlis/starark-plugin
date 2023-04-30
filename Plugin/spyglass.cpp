@@ -2,21 +2,13 @@
 #include "saomega.h"
 
 
-namespace SAOmega::Spyglass {
+namespace SA::Spyglass {
 
     DECLARE_HOOK(AShooterGameMode_StartNewShooterPlayer, void, AShooterGameMode*, APlayerController*, bool, bool, const FPrimalPlayerCharacterConfigStruct&, UPrimalPlayerData*);
     DECLARE_HOOK(UPrimalInventoryComponent_NotifyItemAdded, void, UPrimalInventoryComponent*, UPrimalItem*, bool);
 
     static BlueprintCache spyGlassBuffBlueprint("Blueprint'/Game/Mods/AwesomeSpyglass/AwesomeSpyGlass_Buff.AwesomeSpyGlass_Buff'");
     static BlueprintCache spyGlassBlueprint("Blueprint'/Game/Mods/AwesomeSpyglass/PrimalItem_AwesomeSpyGlass.PrimalItem_AwesomeSpyGlass'");
-
-    bool activateSpyglass(UPrimalItem *item, AShooterCharacter *owner) {
-
-
-
-
-        return true;
-    }
 
     void Hook_AShooterGameMode_StartNewShooterPlayer(AShooterGameMode* _this, APlayerController* newPlayer, bool forceCreateNewPlayerData, bool isFromLogin, const FPrimalPlayerCharacterConfigStruct& characterConfig, UPrimalPlayerData* playerData) {
         AShooterPlayerController* playerController = static_cast<AShooterPlayerController*>(newPlayer);
@@ -53,9 +45,9 @@ namespace SAOmega::Spyglass {
         if (!item->IsA(spyGlassClass) || item->bIsEngram()() || item->bIsBlueprint()())
             return;
 
-        API::Timer::Get().DelayExecute([item]() {
+        //API::Timer::Get().DelayExecute([item]() {
             item->Use(true);
-        }, 2);
+        //}, 2);
     }
 
     void Load() {

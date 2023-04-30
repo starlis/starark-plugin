@@ -4,7 +4,7 @@
 //
 #include "saomega.h"
 
-namespace SAOmega::Breeding {
+namespace SA::Breeding {
     DECLARE_HOOK(APrimalDinoCharacter_DoMate, void, APrimalDinoCharacter*, APrimalDinoCharacter*);
     DECLARE_HOOK(APrimalDinoCharacter_BeginPlay, void, APrimalDinoCharacter*);
     DECLARE_HOOK(APrimalDinoCharacter_UpdateBabyCuddling, void, APrimalDinoCharacter*, long double, char, TSubclassOf<UPrimalItem>);

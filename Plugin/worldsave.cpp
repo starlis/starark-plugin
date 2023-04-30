@@ -4,7 +4,7 @@
 
 using namespace std;
 
-namespace SAOmega::WorldSave {
+namespace SA::WorldSave {
     struct WorldSerializedObject {
         bool ShouldSpawn;
         __int64 DataOffset;
@@ -16,8 +16,6 @@ namespace SAOmega::WorldSave {
 
         }
     };
-
-    volatile bool shuttingDown = false;
 
     struct __declspec(align(8)) FGraphEvent {
         uint8 _padding[0x40];
@@ -34,20 +32,18 @@ namespace SAOmega::WorldSave {
 
     DECLARE_HOOK(APrimalDinoCharacter_TakeDamage, float, APrimalDinoCharacter*, float, UClass **, AController *, AActor *);
     DECLARE_HOOK(AShooterGameMode_SaveWorld, void, AShooterGameMode*, bool);
-    DECLARE_HOOK(AShooterGameMode_BeginPlay, void, AShooterGameMode*);
     DECLARE_HOOK(TestOnlineGameSettings_TestOnlineGameSettings, void, AShooterGameMode*, bool);
     DECLARE_HOOK(AShooterGameMode_PreLogin, void, AShooterGameMode*, FString*, FString*, TSharedPtr<FUniqueNetId, 0>*, FString*, FString*);
+    DECLARE_HOOK(AShooterGameMode_StartNewShooterPlayer, void, AShooterGameMode*, APlayerController*, bool, bool, const FPrimalPlayerCharacterConfigStruct&, UPrimalPlayerData*);
     DECLARE_HOOK(UShooterCheatManager_ServerChat, void, UShooterCheatManager*, FString*);
+    DECLARE_HOOK(UShooterCheatManager_Broadcast, void, UShooterCheatManager*, FString*);
 
-    /*AShooterGameMode* gameMode;
-    void Hook_AShooterGameMode_BeginPlay(AShooterGameMode* _this) {
-        gameMode = _this;
-        AShooterGameMode_BeginPlay_original(_this);
-    }*/
+
 
     uint64_t lastDmg = 0;
     uint64_t lastSave = 0;
     bool hasPendingSave = false;
+    bool pendingForceSave = false;
     float Hook_APrimalDinoCharacter_TakeDamage(APrimalDinoCharacter *_this, float DamageAmount, UClass **DamageEvent, AController *EventInstigator, AActor *DamageCauser) {
         int base = _this->AbsoluteBaseLevelField();
         if (base == 1 && DamageCauser && DamageCauser->TargetingTeamField() >= 50000) {
@@ -67,17 +63,39 @@ namespace SAOmega::WorldSave {
         AShooterGameMode_PreLogin_original(_this, Options, Address, UniqueId, authToken, ErrorMessage);
     }
 
+    void Hook_AShooterGameMode_StartNewShooterPlayer(AShooterGameMode* _this, APlayerController* newPlayer, bool forceCreateNewPlayerData, bool isFromLogin, const FPrimalPlayerCharacterConfigStruct& characterConfig, UPrimalPlayerData* playerData) {
+        AShooterPlayerController *playerController = static_cast<AShooterPlayerController *>(newPlayer);
+        AShooterGameMode_StartNewShooterPlayer_original(_this, newPlayer, forceCreateNewPlayerData, isFromLogin,
+                                                        characterConfig, playerData);
+        AShooterCharacter *playerPawn = playerController->LastControlledPlayerCharacterField().Get();
+        auto now = timestamp();
+        if (!playerPawn || isFromLogin || now - lastSave > 60*8 || hasPendingSave || pendingForceSave) {
+            return;
+        }
+        hasPendingSave = true;
+        pendingForceSave = true;
+        DELAYEXECUTE([]() {
+            hasPendingSave = false;
+            pendingForceSave = true;
+            ArkApi::GetApiUtils().GetShooterGameMode()->SaveWorld(false);
+        }, 30);
+    }
+
+    void Hook_UShooterCheatManager_Broadcast(UShooterCheatManager* _this, FString* msg) {
+        Hook_UShooterCheatManager_ServerChat(_this, msg);
+    }
     void Hook_UShooterCheatManager_ServerChat(UShooterCheatManager* _this, FString* msg) {
-        if (msg->Contains("will shutdown in 1 minute") || msg->Contains("Server is about to shutdown, performing a world save")) {
+        if (msg->Contains("will shutdown in 1 minute")) {
             shuttingDown = true;
-            /*if (gameMode) {
-                CAST(AShooterGameState*, gameMode->GameStateField())->ServerSessionNameField()
-                gameMode->GameSessionField()->UpdateSessionJoinability();
-            }*/
+            ArkApi::GetApiUtils().GetCheatManager()->SaveWorldDisableTransfer();
+        } else if (!shuttingDown && msg->Contains("Server is about to shutdown, performing a world save")) {
+            shuttingDown = true;
+            ArkApi::GetApiUtils().GetCheatManager()->SaveWorldDisableTransfer();
         } else if (msg->Contains("no longer shutting down")) {
             shuttingDown = false;
-
             return;
+        } else if (!shuttingDown && msg->Contains("Server shutdown required.")) {
+            shuttingDown = true;
         }
         if (!msg->Contains("A world save is about to be performed")) {
             UShooterCheatManager_ServerChat_original(_this, msg);
@@ -86,40 +104,47 @@ namespace SAOmega::WorldSave {
 
     void Hook_AShooterGameMode_SaveWorld(AShooterGameMode *_this, bool forceWaitOnSave) {
         auto now = timestamp();
-        if (!forceWaitOnSave && !shuttingDown) {
-            auto sinceDmg = now - lastDmg;
-            auto sinceSave = now - lastSave;
-            const auto saveRate = 60*5;
-            const auto dmgRate = 60;
+        auto sinceDmg = now - lastDmg;
+        auto sinceSave = now - lastSave;
+        const auto saveRate = 60*5;
+        const auto dmgRate = 60;
+        if (!forceWaitOnSave && !shuttingDown && !pendingForceSave && sinceSave < 60*20) {
             if (sinceDmg < dmgRate || sinceSave < saveRate) {
-                if (!hasPendingSave && sinceSave >= saveRate && sinceSave < 60*20) {
+                if (!hasPendingSave && sinceSave >= saveRate) {
                     LOG->info("Delaying world save due to boss dmg or last save recently " + STR(now) + ":" +
                                   STR(sinceDmg) + ":" + STR(sinceSave));
                     hasPendingSave = true;
-                    DELAYEXECUTE([_this]() {
+                    DELAYEXECUTE([]() {
                         hasPendingSave = false;
-                        Hook_AShooterGameMode_SaveWorld(_this, false);
-                    }, 60);
+                        ArkApi::GetApiUtils().GetShooterGameMode()->SaveWorld(false);
+                    }, dmgRate - static_cast<int>(sinceDmg));
                 }
                 return;
             }
             auto color = FLinearColor(255, 0, 0, 255);
             ArkApi::GetApiUtils().SendNotificationToAll(color, 1.1f, 10, nullptr, "Server is performing a world save.");
             lastSave = now;
-            DELAYEXECUTE([_this]() {
-                AShooterGameMode_SaveWorld_original(_this, false);
+            DELAYEXECUTE([]() {
+                pendingForceSave = true; // ensure this call isn't skipped
+                ArkApi::GetApiUtils().GetShooterGameMode()->SaveWorld(false);
             }, 0);
         } else {
             lastSave = now;
-            AShooterGameMode_SaveWorld_original(_this, true);
+            pendingForceSave = false;
+            hasPendingSave = false;
+            AShooterGameMode_SaveWorld_original(_this, forceWaitOnSave);
         }
+    }
+    void Exit() {
+        //ArkApi::GetApiUtils().GetShooterGameMode()->SaveWorld(true);
     }
     void Load() {
         SET_HOOK(APrimalDinoCharacter, TakeDamage);
         SET_HOOK(AShooterGameMode, PreLogin);
         SET_HOOK(AShooterGameMode, SaveWorld);
-        //SET_HOOK(AShooterGameMode, BeginPlay);
         SET_HOOK(UShooterCheatManager, ServerChat);
+        SET_HOOK(UShooterCheatManager, Broadcast);
+        SET_HOOK(AShooterGameMode, StartNewShooterPlayer);
     }
 
     void Unload() {
@@ -127,7 +152,8 @@ namespace SAOmega::WorldSave {
         DISABLE_HOOK(APrimalDinoCharacter, TakeDamage);
         DISABLE_HOOK(AShooterGameMode, PreLogin);
         DISABLE_HOOK(AShooterGameMode, SaveWorld);
-        //DISABLE_HOOK(AShooterGameMode, BeginPlay);
         DISABLE_HOOK(UShooterCheatManager, ServerChat);
+        DISABLE_HOOK(UShooterCheatManager, Broadcast);
+        DISABLE_HOOK(AShooterGameMode, StartNewShooterPlayer);
     }
 }

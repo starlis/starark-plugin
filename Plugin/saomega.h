@@ -1,19 +1,27 @@
 #pragma once
 #include "includes.h"
+#include <TaskExecutor.h>
 
+namespace SA {
 
-namespace SAOmega {
+    extern bool exiting;
+    extern volatile bool shuttingDown;
+    extern nlohmann::json config;
+    extern inline long long calculateFieldOffset(void* _this, const char *field);
+    extern inline uint64_t timestamp();
+    extern std::string serverDir;
+    extern SA::TaskExecutor taskExecutor;
+
     std::string getDinoName(APrimalDinoCharacter* dino);
-    inline long long calculateFieldOffset(void* _this, const char *field) {
-        size_t *actualPtr = reinterpret_cast<size_t *>(GetNativePointerField<void*>(_this, field));
-        return actualPtr - reinterpret_cast<size_t *>(_this);
-    }
-    inline uint64_t timestamp() {
-        return std::time(nullptr);
-    }
+    void writeFile(const std::string& file, const std::string& data);
+    void writeStatus(const std::string& status);
+    extern inline unsigned int getThreadId();
 
-	BOOL Load();
-	BOOL Unload();
+	void Load();
+	void Unload();
+    namespace Config {
+        void ReadConfig();
+    }
     namespace Breeding {
         void Load();
         void Unload();
@@ -31,6 +39,7 @@ namespace SAOmega {
         void Unload();
     }
     namespace WorldSave {
+        void Exit();
         void Load();
         void Unload();
     }
@@ -39,7 +48,4 @@ namespace SAOmega {
         void Unload();
     }
 }
-using namespace SAOmega;
-
-extern "C"  __declspec(dllexport) void plugin_load();
-extern "C"  __declspec(dllexport) void plugin_unload();
+using namespace SA;

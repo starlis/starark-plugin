@@ -10,7 +10,7 @@ set(PROJECT_NAME SAOmega)
 ################################################################################
 set(Header_Files
         "includes.h"
-        )
+        libs/mysql++11.h)
 source_group("Header Files" FILES ${Header_Files})
 
 set(Source_Files
@@ -21,28 +21,24 @@ set(Source_Files__Helpers
         "Helpers/macros.h"
         "Helpers/singleton.h"
         Helpers/BlueprintCache.h
-        Helpers/SafeQueue.hpp)
+        Helpers/SafeQueue.hpp Helpers/TaskExecutor.cpp Helpers/TaskExecutor.h)
 source_group("Source Files\\Helpers" FILES ${Source_Files__Helpers})
 
 set(Source_Files__Plugin
         "Plugin/saomega.h"
-        Plugin/spyglass.cpp Plugin/breeding.cpp Plugin/loot.cpp Plugin/experience.cpp Plugin/worldsave.cpp Plugin/saomega.cpp)
+        Plugin/spyglass.cpp Plugin/breeding.cpp Plugin/loot.cpp Plugin/experience.cpp Plugin/worldsave.cpp Plugin/saomega.cpp Plugin/config.cpp Plugin/util.cpp Plugin/commands.cpp Plugin/DB.h)
 source_group("Source Files\\Plugin" FILES ${Source_Files__Plugin})
-
-set(ALL_FILES
-        ${Header_Files}
-        ${Source_Files}
-        ${Source_Files__Helpers}
-        ${Source_Files__Plugin}
-        Plugin/commands.cpp)
 
 ################################################################################
 # Target
 ################################################################################
-add_library(${PROJECT_NAME} SHARED ${ALL_FILES})
+add_library(${PROJECT_NAME} SHARED ${Header_Files}
+        ${Source_Files}
+        ${Source_Files__Helpers}
+        ${Source_Files__Plugin})
 
 #use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
-#set(ROOT_NAMESPACE SAOmega)
+#set(ROOT_NAMESPACE SA)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
         VS_GLOBAL_KEYWORD "Win32Proj"
@@ -56,6 +52,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_include_directories(${PROJECT_NAME} PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/ARK-Server-API/version/Core/Public;"
         "${CMAKE_CURRENT_SOURCE_DIR}/.;"
+        "${CMAKE_CURRENT_SOURCE_DIR}/libs;"
+        "${CMAKE_CURRENT_SOURCE_DIR}/libs/mysql;"
         "${CMAKE_CURRENT_SOURCE_DIR}/Plugin;"
         "${CMAKE_CURRENT_SOURCE_DIR}/Helpers"
         )
@@ -103,6 +101,7 @@ endif()
 
 target_link_directories(${PROJECT_NAME} PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/ARK-Server-API/out_lib"
+        "${CMAKE_CURRENT_SOURCE_DIR}/libs"
         )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
